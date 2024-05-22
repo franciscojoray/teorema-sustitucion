@@ -130,7 +130,21 @@ fun subcomm :: "comm \<Rightarrow> \<Delta> \<Rightarrow> comm" where
      in Newvar vnew (subint e \<delta>) (subcomm c (\<lambda>x. if x=v then vnew else \<delta> x)))"
 
 lemma "FA (subcomm c \<delta>) = {\<delta> w | w. w \<in> FA c}"
-  apply(induction c)
-  sorry
+  proof(induction c)
+    case Skip
+    then show ?case sorry
+  next
+    case (Assign x1 x2)
+    then show ?case sorry
+  next
+    case (Seq c1 c2)
+    then show ?case sorry
+  next
+    case (Cond x1 c1 c2)
+    then show ?case sorry
+  next
+    case (Newvar x1 x2 c)
+    then show ?case sorry
+  qed
 
 end
