@@ -129,22 +129,24 @@ fun subcomm :: "comm \<Rightarrow> \<Delta> \<Rightarrow> comm" where
     (let vnew = get_fresh_var {\<delta> v | v. v \<in> (FVcomm c - {v})}
      in Newvar vnew (subint e \<delta>) (subcomm c (\<lambda>x. if x=v then vnew else \<delta> x)))"
 
+
+lemma union_or: "{\<delta> x | x. x \<in> A} \<union> {\<delta> x | x. x \<in> B} = {\<delta> x | x. x \<in> A \<or> x \<in> B}" by blast
 lemma "FA (subcomm c \<delta>) = {\<delta> w | w. w \<in> FA c}"
-  proof(induction c)
-    case Skip
-    then show ?case sorry
-  next
-    case (Assign x1 x2)
-    then show ?case sorry
-  next
-    case (Seq c1 c2)
-    then show ?case sorry
-  next
-    case (Cond x1 c1 c2)
-    then show ?case sorry
-  next
-    case (Newvar x1 x2 c)
-    then show ?case sorry
-  qed
+proof(induction c)
+  case Skip
+  then show ?case by simp
+next
+  case (Assign x1 x2)
+  then show ?case by simp
+next
+  case (Seq c1 c2)
+  with union_or show ?case by simp
+next
+  case (Cond x1 c1 c2)
+  with union_or show ?case by simp
+next
+  case (Newvar x1 x2 c)
+  then show ?case sorry
+qed
 
 end
