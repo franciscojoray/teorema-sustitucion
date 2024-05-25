@@ -126,7 +126,7 @@ fun subcomm :: "comm \<Rightarrow> \<Delta> \<Rightarrow> comm" where
 | "subcomm (Seq c0 c1) \<delta> = Seq (subcomm c0 \<delta>) (subcomm c1 \<delta>)"
 | "subcomm (Cond b c0 c1) \<delta> = Cond b (subcomm c0 \<delta>) (subcomm c1 \<delta>)"
 | "subcomm (Newvar v e c) \<delta> =
-    (let vnew = get_fresh_var {\<delta> v | v. v \<in> (FVcomm c - {v})}
+    (let vnew = get_fresh_var {\<delta> w | w. w \<in> (FVcomm c - {v})}
      in Newvar vnew (subint e \<delta>) (subcomm c (\<lambda>x. if x=v then vnew else \<delta> x)))"
 
 
