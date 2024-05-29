@@ -263,10 +263,9 @@ proof (induction c arbitrary: \<delta> \<sigma> \<sigma>')
 next
   case (Assign v e)
   have int_prem: "w \<in> FVint e \<longrightarrow> \<sigma>' (\<delta> w) = \<sigma> w" proof
-    from Assign.prems have prem: "w \<in> FVcomm (Assign v e) \<longrightarrow> \<sigma>' (\<delta> w) = \<sigma> w" by simp
     assume "w \<in> FVint e"
     hence "w \<in> FVcomm (Assign v e)" by simp
-    with prem show "\<sigma>' (\<delta> w) = \<sigma> w" by blast
+    with Assign.prems show "\<sigma>' (\<delta> w) = \<sigma> w" by blast
   qed
   have 1: "let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> v) in semcomm (Assign v e) \<sigma> = Norm \<sigma>1" by simp
   have 2: "let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' (\<delta> v)) in 
@@ -286,32 +285,23 @@ next
       ultimately show ?thesis by simp
     next
       assume s: "w \<noteq> v"
-      hence "let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> v) in \<sigma>1 w = \<sigma> v" by simp
+      hence sigma1:"let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> v) in \<sigma>1 w = \<sigma> v" by simp
       from winfv have "{w, v} \<subseteq> FVcomm (Assign v e)" by simp
       with s have "{w, v} \<subseteq> FVcomm (Assign v e) \<and> w \<noteq> v" by simp
       with Assign.prems(1) have wnotv: "\<delta> w \<noteq> \<delta> v" by (simp add:s)
-      hence "let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' (\<delta> v)) in
+      hence sigma2: "let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' (\<delta> v)) in
          \<sigma>2 (\<delta> w) = \<sigma>' (\<delta> v)" by (simp add: s)
-      moreover from int_prem have "semint e \<sigma> = (semint (subint e \<delta>) \<sigma>')" by (simp add: SubstExp)
-      ultimately show ?thesis sorry
+      from Assign.prems have "\<sigma> v = \<sigma>' (\<delta> v)" by simp
+      with sigma1 sigma2 show ?thesis by simp
     qed
     thus "(let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> v) in
-       let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' (\<delta> v)) in \<sigma>1 w = \<sigma>2 (\<delta> w))" sorry
+       let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' (\<delta> v)) in \<sigma>1 w = \<sigma>2 (\<delta> w))" by simp
   qed
-  hence "let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> v) in
-         let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' (\<delta> v)) in
-         \<sigma>1 w = \<sigma>2 (\<delta> w)" sorry
-  hence  "let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> v) in
-         let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' (\<delta> v)) in
-         (w \<in> FVcomm (Assign v e) \<longrightarrow> \<sigma>1 w = \<sigma>2 (\<delta> w))" sorry
-  hence  3: "\<exists> \<sigma>1 \<sigma>2. let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> v) in
-         let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' (\<delta> v)) in
-         (w \<in> FVcomm (Assign v e) \<longrightarrow> \<sigma>1 w = \<sigma>2 (\<delta> w))" by simp
-  with 1 2 have "\<exists> \<sigma>1 \<sigma>2. let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> v) in
+  hence "\<exists> \<sigma>1 \<sigma>2. let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> v) in
          let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' (\<delta> v)) in
          semcomm (Assign v e) \<sigma> = Norm \<sigma>1 \<and> semcomm (subcomm (Assign v e) \<delta>) \<sigma>' = Norm \<sigma>2 \<and>
          (w \<in> FVcomm (Assign v e) \<longrightarrow> \<sigma>1 w = \<sigma>2 (\<delta> w))" by simp
-  thus ?case sorry
+  thus ?case by simp
 next
   case (Seq c1 c2)
   then show ?case sorry
