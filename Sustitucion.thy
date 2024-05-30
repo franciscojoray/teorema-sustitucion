@@ -303,19 +303,39 @@ next
   hence "semcomm c0 \<sigma> = Bottom \<or> semcomm c0 \<sigma> \<noteq> Bottom" by simp
   then show ?case proof
     assume s: "semcomm c0 \<sigma> = Bottom"
-    have "FVcomm c0 \<subseteq> FVcomm (Seq c0 c1)" by simp
-    hence "(\<forall>w w'. {w, w'} \<subseteq> FVcomm c0 \<and> w \<noteq> w' \<longrightarrow> \<delta> w \<noteq> \<delta> w') \<and>
-      (\<forall>w. w \<in> FVcomm c0 \<longrightarrow> \<sigma>'(\<delta> w) = \<sigma> w)" by (simp add: Seq.prems)
-    with Seq have "((semcomm c0 \<sigma> = Bottom \<and> semcomm (subcomm c0 \<delta>) \<sigma>' = Bottom) \<or>
+    from Seq have "(semcomm c0 \<sigma> = Bottom \<and> semcomm (subcomm c0 \<delta>) \<sigma>' = Bottom) \<or>
        (\<exists> \<sigma>1 \<sigma>2. semcomm c0 \<sigma> = Norm \<sigma>1 \<and> semcomm (subcomm c0 \<delta>) \<sigma>' = Norm \<sigma>2
-       \<and> (w \<in> FVcomm c0 \<longrightarrow> \<sigma>1 w = \<sigma>2 (\<delta> w))))" by simp
+       \<and> (w \<in> FVcomm c0 \<longrightarrow> \<sigma>1 w = \<sigma>2 (\<delta> w)))" by simp
     with s have "(semcomm (subcomm c0 \<delta>) \<sigma>' = Bottom)" by simp
     hence "semcomm (subcomm (Seq c0 c1) \<delta>) \<sigma>' = Bottom" by simp
     moreover from s have "semcomm (Seq c0 c1) \<sigma> = Bottom" by simp
     ultimately show ?case by simp
   next
-    assume "semcomm c0 \<sigma> \<noteq> Bottom"
-    with  \<Sigma>b.exhaust have  "(\<exists>\<sigma>1. semcomm c0 \<sigma> = Norm \<sigma>1)" by (meson \<Sigma>b.exhaust)
+    assume s: "semcomm c0 \<sigma> \<noteq> Bottom"
+    with  \<Sigma>b.exhaust have  "(\<exists>\<sigma>0. semcomm c0 \<sigma> = Norm \<sigma>0)" by (meson \<Sigma>b.exhaust)
+    then obtain \<sigma>0 where "semcomm c0 \<sigma> = Norm \<sigma>0" by blast
+    from Seq have "(semcomm c0 \<sigma> = Bottom \<and> semcomm (subcomm c0 \<delta>) \<sigma>' = Bottom) \<or>
+       (\<exists> \<sigma>1 \<sigma>2. semcomm c0 \<sigma> = Norm \<sigma>1 \<and> semcomm (subcomm c0 \<delta>) \<sigma>' = Norm \<sigma>2
+       \<and> (w \<in> FVcomm c0 \<longrightarrow> \<sigma>1 w = \<sigma>2 (\<delta> w)))" by simp
+    with s have "\<exists> \<sigma>1 \<sigma>2. semcomm c0 \<sigma> = Norm \<sigma>1 \<and> semcomm (subcomm c0 \<delta>) \<sigma>' = Norm \<sigma>2
+       \<and> (w \<in> FVcomm c0 \<longrightarrow> \<sigma>1 w = \<sigma>2 (\<delta> w))" by simp
+    hence "\<exists>\<sigma>2. semcomm (subcomm c0 \<delta>) \<sigma>' = Norm \<sigma>2" by blast
+    then obtain \<sigma>0' where "semcomm (subcomm c0 \<delta>) \<sigma>' = Norm \<sigma>0'" by blast
+    have "\<forall>w. w \<in> FVcomm c1 \<longrightarrow> \<sigma>'(\<delta> w) = \<sigma> w" proof
+      fix w
+      show "w \<in> FVcomm c1 \<longrightarrow> \<sigma>'(\<delta> w) = \<sigma> w" proof
+        assume "w \<in> FVcomm c1"
+        hence "w \<in> FVcomm c0 \<or> w \<notin> FVcomm c0" by simp
+        thus "\<sigma>'(\<delta> w) = \<sigma> w" proof
+          assume s: "w \<in> FVcomm c0"
+          from Seq have "\<sigma>'(\<delta> w) = \<sigma> w" by (simp add: s)
+          thus ?thesis by simp
+        next
+          assume "w \<notin> FVcomm c0"
+          thus ?thesis sorry
+        qed
+      qed
+    qed
     then show ?case sorry
 next
   case (Cond x1 c1 c2)
