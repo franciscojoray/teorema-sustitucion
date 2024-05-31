@@ -59,6 +59,17 @@ datatype boolexp =
   | Conj boolexp boolexp
   | Neg boolexp
 
+fun subbool :: "boolexp \<Rightarrow> \<Delta> \<Rightarrow> boolexp" where
+  "subbool (Boolconst b) _ = Boolconst b"
+| "subbool (Eq e0 e1) \<delta> = Eq (subint e0 \<delta>) (subint e1 \<delta>)"
+| "subbool (Lt e0 e1) \<delta> = Lt (subint e0 \<delta>) (subint e1 \<delta>)"
+| "subbool (Gt e0 e1) \<delta> = Gt (subint e0 \<delta>) (subint e1 \<delta>)"
+| "subbool (Lte e0 e1) \<delta> = Lte (subint e0 \<delta>) (subint e1 \<delta>)"
+| "subbool (Gte e0 e1) \<delta> = Gte (subint e0 \<delta>) (subint e1 \<delta>)"
+| "subbool (Disj b0 b1) \<delta> = Disj (subbool b0 \<delta>) (subbool b1 \<delta>)"
+| "subbool (Conj b0 b1) \<delta> = Conj (subbool b0 \<delta>) (subbool b1 \<delta>)"
+| "subbool (Neg b) \<delta> = Neg (subbool b \<delta>)"
+
 fun FVbool :: "boolexp \<Rightarrow> var set" where
   "FVbool (Boolconst _) = {}"
 | "FVbool (Eq e0 e1) = FVint e0 \<union> FVint e1"
@@ -124,7 +135,7 @@ fun subcomm :: "comm \<Rightarrow> \<Delta> \<Rightarrow> comm" where
   "subcomm Skip _ = Skip"
 | "subcomm (Assign v e) \<delta> = Assign (\<delta> v) (subint e \<delta>)"
 | "subcomm (Seq c0 c1) \<delta> = Seq (subcomm c0 \<delta>) (subcomm c1 \<delta>)"
-| "subcomm (Cond b c0 c1) \<delta> = Cond b (subcomm c0 \<delta>) (subcomm c1 \<delta>)"
+| "subcomm (Cond b c0 c1) \<delta> = Cond (subbool b \<delta>) (subcomm c0 \<delta>) (subcomm c1 \<delta>)"
 | "subcomm (Newvar v e c) \<delta> =
     (let vnew = get_fresh_var {\<delta> w | w. w \<in> (FVcomm c - {v})}
      in Newvar vnew (subint e \<delta>) (subcomm c (\<lambda>x. if x=v then vnew else \<delta> x)))"
@@ -378,9 +389,9 @@ theorem SubstExp:
 theorem
   "(\<forall>w w'. {w, w'} \<subseteq> FVcomm c \<and> w \<noteq> w' \<longrightarrow> \<delta> w \<noteq> \<delta> w') \<and>
    (\<forall>w. w \<in> FVcomm c \<longrightarrow> \<sigma>'(\<delta> w) = \<sigma> w)
-   \<Longrightarrow> ((semcomm c \<sigma> = Bottom \<and> semcomm (subcomm c \<delta>) \<sigma>' = Bottom) \<or>
+   \<Longrightarrow> (semcomm c \<sigma> = Bottom \<and> semcomm (subcomm c \<delta>) \<sigma>' = Bottom) \<or>
        (\<exists> \<sigma>1 \<sigma>2. semcomm c \<sigma> = Norm \<sigma>1 \<and> semcomm (subcomm c \<delta>) \<sigma>' = Norm \<sigma>2
-       \<and> (\<forall>w. w \<in> FVcomm c \<longrightarrow> \<sigma>1 w = \<sigma>2 (\<delta> w))))"
+       \<and> (\<forall>w. w \<in> FVcomm c \<longrightarrow> \<sigma>1 w = \<sigma>2 (\<delta> w)))"
 proof (induction c arbitrary: \<delta> \<sigma> \<sigma>')
   case Skip
   then show ?case by simp
@@ -574,8 +585,21 @@ next
     qed
   qed
 next
-  case (Cond x1 c1 c2)
-  then show ?case sorry
+  case (Cond b c0 c1)
+  from Cond have c0: "(semcomm c0 \<sigma> = Bottom \<and> semcomm (subcomm c0 \<delta>) \<sigma>' = Bottom) \<or>
+       (\<exists> \<sigma>1 \<sigma>2. semcomm c0 \<sigma> = Norm \<sigma>1 \<and> semcomm (subcomm c0 \<delta>) \<sigma>' = Norm \<sigma>2
+       \<and> (\<forall>w. w \<in> FVcomm c0 \<longrightarrow> \<sigma>1 w = \<sigma>2 (\<delta> w)))" by simp
+  from Cond have c1: "(semcomm c1 \<sigma> = Bottom \<and> semcomm (subcomm c1 \<delta>) \<sigma>' = Bottom) \<or>
+       (\<exists> \<sigma>1 \<sigma>2. semcomm c1 \<sigma> = Norm \<sigma>1 \<and> semcomm (subcomm c1 \<delta>) \<sigma>' = Norm \<sigma>2
+       \<and> (\<forall>w. w \<in> FVcomm c1 \<longrightarrow> \<sigma>1 w = \<sigma>2 (\<delta> w)))" by simp
+  have "sembool b \<sigma> \<or> \<not>sembool b \<sigma>" by simp
+  thus ?case proof
+    assume s: "sembool b \<sigma>"
+    thus ?case sorry
+  next 
+    assume "\<not>sembool b \<sigma>"
+    thus ?case sorry
+  qed
 next
   case (Newvar x1 x2 c)
   then show ?case sorry
