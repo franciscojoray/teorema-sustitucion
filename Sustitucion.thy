@@ -378,23 +378,81 @@ theorem coincidence2:
   sorry
 
 theorem SubsInt:
-  fixes p :: intexp
-  fixes \<delta> :: \<Delta>
-  fixes \<sigma> :: \<Sigma>
-  fixes \<sigma>':: \<Sigma>
-  assumes s: "\<forall>w. w \<in> FVint p \<longrightarrow> \<sigma> (\<delta> w) = \<sigma>' w"
-  shows "semint (subint p \<delta>) \<sigma> = semint p \<sigma>'"
-  sorry
+  "(\<forall>w. w \<in> FVint e \<longrightarrow> \<sigma> (\<delta> w) = \<sigma>' w) \<Longrightarrow> (semint (subint e \<delta>) \<sigma> = semint e \<sigma>')"
+proof (induction e)
+  case (Natconst x)
+  then show ?case by simp
+next
+  case (Var x)
+  then show ?case by simp
+next
+  case (Neg e)
+  then show ?case by simp
+next
+  case (Sum e1 e2)
+  then show ?case by simp
+next
+  case (Sub e1 e2)
+  then show ?case by simp
+next
+  case (Div e1 e2)
+  then show ?case by simp
+next
+  case (Mod e1 e2)
+  then show ?case by simp
+next
+  case (Prod e1 e2)
+  then show ?case by simp
+qed
 
 theorem SubsBool:
-  fixes b :: boolexp
-  fixes \<delta> :: \<Delta>
-  fixes \<sigma> :: \<Sigma>
-  fixes \<sigma>':: \<Sigma>
-  assumes s: "\<forall>w. w \<in> FVbool b \<longrightarrow> \<sigma> (\<delta> w) = \<sigma>' w"
-  shows "sembool (subbool b \<delta>) \<sigma> = sembool b \<sigma>'"
-  sorry
-
+  "\<forall>w. w \<in> FVbool b \<longrightarrow> \<sigma> (\<delta> w) = \<sigma>' w \<Longrightarrow> sembool (subbool b \<delta>) \<sigma> = sembool b \<sigma>'"
+proof (induction b)
+  case (Boolconst x)
+  then show ?case by simp
+next
+  (* case (Eq e0 e1)
+  from SubsInt have e0: "\<forall>w. w \<in> FVint e0 \<longrightarrow> \<sigma> (\<delta> w) = \<sigma>' w \<Longrightarrow> semint (subint e0 \<delta>) \<sigma> = semint e0 \<sigma>'" by simp
+  from SubsInt have e1: "\<forall>w. w \<in> FVint e1 \<longrightarrow> \<sigma> (\<delta> w) = \<sigma>' w \<Longrightarrow> semint (subint e1 \<delta>) \<sigma> = semint e1 \<sigma>'" by simp
+  from Eq.prems have prem0: "\<forall>w. w \<in> FVint e0 \<longrightarrow> \<sigma> (\<delta> w) = \<sigma>' w" by simp
+  from Eq.prems have prem1: "\<forall>w. w \<in> FVint e1 \<longrightarrow> \<sigma> (\<delta> w) = \<sigma>' w" by simp
+  from e0 prem0 have "semint (subint e0 \<delta>) \<sigma> = semint e0 \<sigma>'" by simp
+  moreover from e1 prem1 have "semint (subint e1 \<delta>) \<sigma> = semint e1 \<sigma>'" by simp
+  ultimately show ?case by simp *)
+  case (Eq e0 e1)
+  from SubsInt Eq.prems have "semint (subint e0 \<delta>) \<sigma> = semint e0 \<sigma>'" by simp
+  moreover from SubsInt Eq.prems have "semint (subint e1 \<delta>) \<sigma> = semint e1 \<sigma>'" by simp
+  ultimately show ?case by simp
+next
+  case (Lt e0 e1)
+  from SubsInt Lt.prems have "semint (subint e0 \<delta>) \<sigma> = semint e0 \<sigma>'" by simp
+  moreover from SubsInt Lt.prems have "semint (subint e1 \<delta>) \<sigma> = semint e1 \<sigma>'" by simp
+  ultimately show ?case by simp
+next
+  case (Gt e0 e1)
+  from SubsInt Gt.prems have "semint (subint e0 \<delta>) \<sigma> = semint e0 \<sigma>'" by simp
+  moreover from SubsInt Gt.prems have "semint (subint e1 \<delta>) \<sigma> = semint e1 \<sigma>'" by simp
+  ultimately show ?case by simp
+next
+  case (Lte e0 e1)
+  from SubsInt Lte.prems have "semint (subint e0 \<delta>) \<sigma> = semint e0 \<sigma>'" by simp
+  moreover from SubsInt Lte.prems have "semint (subint e1 \<delta>) \<sigma> = semint e1 \<sigma>'" by simp
+  ultimately show ?case by simp
+next
+  case (Gte e0 e1)
+  from SubsInt Gte.prems have "semint (subint e0 \<delta>) \<sigma> = semint e0 \<sigma>'" by simp
+  moreover from SubsInt Gte.prems have "semint (subint e1 \<delta>) \<sigma> = semint e1 \<sigma>'" by simp
+  ultimately show ?case by simp
+next
+  case (Disj b1 b2)
+  then show ?case by simp
+next
+  case (Conj b1 b2)
+  then show ?case by simp
+next
+  case (Neg b)
+  then show ?case by simp
+qed
 
 theorem
   "(\<forall>w w'. {w, w'} \<subseteq> FVcomm c \<and> w \<noteq> w' \<longrightarrow> \<delta> w \<noteq> \<delta> w') \<and>
