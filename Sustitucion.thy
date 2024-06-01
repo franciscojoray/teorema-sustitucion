@@ -377,7 +377,7 @@ theorem coincidence2:
   "\<exists>\<sigma>0. semcomm c \<sigma> = Norm \<sigma>0 \<Longrightarrow> \<forall>w. w \<notin> FA c \<longrightarrow> \<sigma>0 w = \<sigma> w"
   sorry
 
-theorem SubstExp:
+theorem SubsInt:
   fixes p :: intexp
   fixes \<delta> :: \<Delta>
   fixes \<sigma> :: \<Sigma>
@@ -385,6 +385,16 @@ theorem SubstExp:
   assumes s: "\<forall>w. w \<in> FVint p \<longrightarrow> \<sigma> (\<delta> w) = \<sigma>' w"
   shows "semint (subint p \<delta>) \<sigma> = semint p \<sigma>'"
   sorry
+
+theorem SubsBool:
+  fixes b :: boolexp
+  fixes \<delta> :: \<Delta>
+  fixes \<sigma> :: \<Sigma>
+  fixes \<sigma>':: \<Sigma>
+  assumes s: "\<forall>w. w \<in> FVbool b \<longrightarrow> \<sigma> (\<delta> w) = \<sigma>' w"
+  shows "sembool (subbool b \<delta>) \<sigma> = sembool b \<sigma>'"
+  sorry
+
 
 theorem
   "(\<forall>w w'. {w, w'} \<subseteq> FVcomm c \<and> w \<noteq> w' \<longrightarrow> \<delta> w \<noteq> \<delta> w') \<and>
@@ -422,7 +432,7 @@ next
         hence "let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> v) in \<sigma>1 w = (semint e \<sigma>)" by simp
         moreover have "let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' (\<delta> v)) in
            \<sigma>2 (\<delta> w) = (semint (subint e \<delta>) \<sigma>')" by (simp add :s)
-        moreover from int_prem have "semint (subint e \<delta>) \<sigma>' = semint e \<sigma>" by (simp add: SubstExp)
+        moreover from int_prem have "semint (subint e \<delta>) \<sigma>' = semint e \<sigma>" by (simp add: SubsInt)
         ultimately show ?thesis by simp
       next
         assume s: "w \<noteq> v"
@@ -586,6 +596,8 @@ next
   qed
 next
   case (Cond b c0 c1)
+  from Cond.prems have "(\<forall>w. w \<in> FVbool b \<longrightarrow> \<sigma>'(\<delta> w) = \<sigma> w)" by simp
+  with SubsBool have sbooleq:"sembool (subbool b \<delta>) \<sigma>' = sembool b \<sigma>" by simp
   from Cond have c0: "(semcomm c0 \<sigma> = Bottom \<and> semcomm (subcomm c0 \<delta>) \<sigma>' = Bottom) \<or>
        (\<exists> \<sigma>1 \<sigma>2. semcomm c0 \<sigma> = Norm \<sigma>1 \<and> semcomm (subcomm c0 \<delta>) \<sigma>' = Norm \<sigma>2
        \<and> (\<forall>w. w \<in> FVcomm c0 \<longrightarrow> \<sigma>1 w = \<sigma>2 (\<delta> w)))" by simp
@@ -595,10 +607,15 @@ next
   have "sembool b \<sigma> \<or> \<not>sembool b \<sigma>" by simp
   thus ?case proof
     assume s: "sembool b \<sigma>"
+    with c0 sbooleq have "(semcomm (Cond b c0 c1) \<sigma> = Bottom
+      \<and> semcomm (subcomm (Cond b c0 c1) \<delta>) \<sigma>' = Bottom)
+      \<or> (\<exists> \<sigma>1 \<sigma>2. semcomm (Cond b c0 c1) \<sigma> = Norm \<sigma>1
+      \<and> semcomm (subcomm (Cond b c0 c1) \<delta>) \<sigma>' = Norm \<sigma>2
+      \<and> (\<forall>w. w \<in> FVcomm c0 \<longrightarrow> \<sigma>1 w = \<sigma>2 (\<delta> w)))" by simp
     thus ?case sorry
-  next 
+  next
     assume "\<not>sembool b \<sigma>"
-    thus ?case sorry
+   thus ?case sorry
   qed
 next
   case (Newvar x1 x2 c)
