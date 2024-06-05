@@ -106,7 +106,7 @@ fun star :: "(\<Sigma> \<Rightarrow> \<Sigma>b) \<Rightarrow> (\<Sigma>b \<Right
 
 fun semcomm :: "comm \<Rightarrow> \<Sigma> \<Rightarrow> \<Sigma>b" where
   "semcomm Skip \<sigma> = Norm \<sigma>"
-| "semcomm (Assign v e) \<sigma> = Norm (\<lambda>x. if x=v then (semint e \<sigma>) else \<sigma> v)"
+| "semcomm (Assign v e) \<sigma> = Norm (\<lambda>x. if x=v then (semint e \<sigma>) else \<sigma> x)"
 | "semcomm (Seq c0 c1) \<sigma> = star (semcomm c1) (semcomm c0 \<sigma>)"
 | "semcomm (Cond b c0 c1) \<sigma> = 
     (if (sembool b \<sigma>) then (semcomm c0 \<sigma>) else (semcomm c1 \<sigma>))"
@@ -369,14 +369,6 @@ next
 qed
 
 
-theorem coincidence1:
-  "(\<forall>w. w \<in> FVcomm c \<longrightarrow> \<sigma> w = \<sigma>' w) \<Longrightarrow> (semcomm c \<sigma> = Bottom \<and> semcomm c \<sigma>' = Bottom) \<or>
-   (\<exists>\<sigma>0 \<sigma>0'. (semcomm c \<sigma>) = Norm \<sigma>0 \<and> (semcomm c \<sigma>') = Norm \<sigma>0' \<and> (\<forall>w. w \<in> FVcomm c \<longrightarrow> \<sigma>0 w = \<sigma>0' w))"
-  sorry
-theorem coincidence2:
-  "\<exists>\<sigma>0. semcomm c \<sigma> = Norm \<sigma>0 \<Longrightarrow> \<forall>w. w \<notin> FA c \<longrightarrow> \<sigma>0 w = \<sigma> w"
-  sorry
-
 theorem coincidenceInt:
   "(\<forall>w. w \<in> FVint e \<longrightarrow> \<sigma> w = \<sigma>' w) \<Longrightarrow> (semint e \<sigma> = semint e \<sigma>')"
 proof (induction e)
@@ -435,7 +427,7 @@ next
   from coincidenceInt Gte.prems have "(semint e0 \<sigma> = semint e0 \<sigma>')" by simp
   moreover from coincidenceInt Gte.prems have "(semint e1 \<sigma> = semint e1 \<sigma>')" by simp
   ultimately show ?case by simp
-next
+next                            
   case (Disj b1 b2)
   then show ?case by simp
 next
@@ -445,6 +437,42 @@ next
   case (Neg b)
   then show ?case by simp
 qed
+
+
+theorem coincidence1:
+  "(\<forall>w. w \<in> FVcomm c \<longrightarrow> \<sigma> w = \<sigma>' w) \<Longrightarrow> (semcomm c \<sigma> = Bottom \<and> semcomm c \<sigma>' = Bottom) \<or>
+   (\<exists>\<sigma>0 \<sigma>0'. (semcomm c \<sigma>) = Norm \<sigma>0 \<and> (semcomm c \<sigma>') = Norm \<sigma>0' \<and> (\<forall>w. w \<in> FVcomm c \<longrightarrow> \<sigma>0 w = \<sigma>0' w))"
+  sorry
+theorem coincidence2:
+  "semcomm c \<sigma> \<noteq> Bottom \<Longrightarrow> \<exists>\<sigma>0. semcomm c \<sigma> = Norm \<sigma>0 \<and> (\<forall>w. w \<notin> FA c \<longrightarrow> \<sigma>0 w = \<sigma> w)"
+proof (induction c arbitrary: \<sigma>)
+  case Skip
+  then show ?case by simp
+next
+case (Assign v e)
+  have "\<forall>w. w \<notin> FA (Assign v e) \<longrightarrow> (\<lambda>x. if x=v then (semint e \<sigma>) else \<sigma> x) w = \<sigma> w" 
+  proof
+    fix w 
+    show "w \<notin> FA (Assign v e) \<longrightarrow> (\<lambda>x. if x=v then (semint e \<sigma>) else \<sigma> x) w = \<sigma> w"
+    proof 
+      assume "w \<notin> FA (Assign v e)"
+      hence "w \<noteq> v" by simp
+      then show "(\<lambda>x. if x=v then (semint e \<sigma>) else \<sigma> x) w = \<sigma> w"  by simp
+    qed
+  qed
+  then show ?case by simp
+next
+  case (Seq c0 c1)
+
+  then show ?case by simp
+next
+  case (Cond b c0 c1)
+  then show ?case sorry
+next
+  case (Newvar v e c)
+  then show ?case sorry
+qed
+
 
 theorem SubsInt:
   "(\<forall>w. w \<in> FVint e \<longrightarrow> \<sigma> (\<delta> w) = \<sigma>' w) \<Longrightarrow> (semint (subint e \<delta>) \<sigma> = semint e \<sigma>')"
