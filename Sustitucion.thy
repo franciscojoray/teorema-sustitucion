@@ -377,6 +377,75 @@ theorem coincidence2:
   "\<exists>\<sigma>0. semcomm c \<sigma> = Norm \<sigma>0 \<Longrightarrow> \<forall>w. w \<notin> FA c \<longrightarrow> \<sigma>0 w = \<sigma> w"
   sorry
 
+theorem coincidenceInt:
+  "(\<forall>w. w \<in> FVint e \<longrightarrow> \<sigma> w = \<sigma>' w) \<Longrightarrow> (semint e \<sigma> = semint e \<sigma>')"
+proof (induction e)
+  case (Natconst x)
+  then show ?case by simp
+next
+  case (Var x)
+  then show ?case by simp
+next
+  case (Neg e)
+  then show ?case by simp
+next
+  case (Sum e1 e2)
+  then show ?case by simp
+next
+  case (Sub e1 e2)
+  then show ?case by simp
+next
+  case (Div e1 e2)
+  then show ?case by simp
+next
+  case (Mod e1 e2)
+  then show ?case by simp
+next
+  case (Prod e1 e2)
+  then show ?case by simp
+qed
+
+theorem coincidenceBool:
+  "(\<forall>w. w \<in> FVbool b \<longrightarrow> \<sigma> w = \<sigma>' w) \<Longrightarrow> (sembool b \<sigma> = sembool b \<sigma>')"
+proof (induction b)
+  case (Boolconst x)
+  then show ?case by simp
+next
+  case (Eq e0 e1)
+  from coincidenceInt Eq.prems have "(semint e0 \<sigma> = semint e0 \<sigma>')" by simp
+  moreover from coincidenceInt Eq.prems have "(semint e1 \<sigma> = semint e1 \<sigma>')" by simp
+  ultimately show ?case by simp
+next
+  case (Lt e0 e1)
+  from coincidenceInt Lt.prems have "(semint e0 \<sigma> = semint e0 \<sigma>')" by simp
+  moreover from coincidenceInt Lt.prems have "(semint e1 \<sigma> = semint e1 \<sigma>')" by simp
+  ultimately show ?case by simp
+next
+  case (Gt e0 e1)
+  from coincidenceInt Gt.prems have "(semint e0 \<sigma> = semint e0 \<sigma>')" by simp
+  moreover from coincidenceInt Gt.prems have "(semint e1 \<sigma> = semint e1 \<sigma>')" by simp
+  ultimately show ?case by simp
+next
+  case (Lte e0 e1)
+  from coincidenceInt Lte.prems have "(semint e0 \<sigma> = semint e0 \<sigma>')" by simp
+  moreover from coincidenceInt Lte.prems have "(semint e1 \<sigma> = semint e1 \<sigma>')" by simp
+  ultimately show ?case by simp
+next
+  case (Gte e0 e1)
+  from coincidenceInt Gte.prems have "(semint e0 \<sigma> = semint e0 \<sigma>')" by simp
+  moreover from coincidenceInt Gte.prems have "(semint e1 \<sigma> = semint e1 \<sigma>')" by simp
+  ultimately show ?case by simp
+next
+  case (Disj b1 b2)
+  then show ?case by simp
+next
+  case (Conj b1 b2)
+  then show ?case by simp
+next
+  case (Neg b)
+  then show ?case by simp
+qed
+
 theorem SubsInt:
   "(\<forall>w. w \<in> FVint e \<longrightarrow> \<sigma> (\<delta> w) = \<sigma>' w) \<Longrightarrow> (semint (subint e \<delta>) \<sigma> = semint e \<sigma>')"
 proof (induction e)
