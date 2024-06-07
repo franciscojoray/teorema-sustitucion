@@ -463,14 +463,49 @@ case (Assign v e)
   then show ?case by simp
 next
   case (Seq c0 c1)
-
-  then show ?case by simp
+  have "\<exists>\<sigma>'. semcomm c0 \<sigma> = Norm \<sigma>'\<and> (\<forall>w. w \<notin> FA c0 \<longrightarrow> \<sigma>' w = \<sigma> w)" proof -
+    from Seq.prems have "semcomm c0 \<sigma> \<noteq> Bottom" by auto
+    with Seq show ?thesis by simp
+  qed
+  with Seq obtain \<sigma>' where s'def: "semcomm c0 \<sigma> = Norm \<sigma>' \<and> (\<forall>w. w \<notin> FA c0 \<longrightarrow> \<sigma>' w = \<sigma> w)" by auto
+  moreover have "\<exists>\<sigma>''. semcomm c1 \<sigma>' = Norm \<sigma>''\<and> (\<forall>w. w \<notin> FA c1 \<longrightarrow> \<sigma>'' w = \<sigma>' w)" proof -
+    from Seq.prems s'def have "semcomm c1 \<sigma>' \<noteq> Bottom" by auto
+    with Seq show ?thesis by simp
+  qed
+  ultimately show ?case by auto
 next
   case (Cond b c0 c1)
-  then show ?case sorry
+  have "(sembool b \<sigma> \<or> \<not>sembool b \<sigma>)" by simp
+  then show ?case proof
+    assume s: "sembool b \<sigma>"
+    have "\<exists>\<sigma>'. semcomm c0 \<sigma> = Norm \<sigma>'\<and> (\<forall>w. w \<notin> FA c0 \<longrightarrow> \<sigma>' w = \<sigma> w)" proof -
+      from Cond.prems s have "semcomm c0 \<sigma> \<noteq> Bottom" by auto
+      with Cond show ?thesis by simp
+    qed
+    with Cond obtain \<sigma>' where s'def: "semcomm c0 \<sigma> = Norm \<sigma>' \<and> (\<forall>w. w \<notin> FA c0 \<longrightarrow> \<sigma>' w = \<sigma> w)" by auto
+    moreover with s have "semcomm (Cond b c0 c1) \<sigma> = Norm \<sigma>'" by simp
+    ultimately show ?case by auto
+  next
+    assume s: "\<not>sembool b \<sigma>"
+    have "\<exists>\<sigma>'. semcomm c1 \<sigma> = Norm \<sigma>'\<and> (\<forall>w. w \<notin> FA c1 \<longrightarrow> \<sigma>' w = \<sigma> w)" proof -
+      from Cond.prems s have "semcomm c1 \<sigma> \<noteq> Bottom" by auto
+      with Cond show ?thesis by simp
+    qed
+    with Cond obtain \<sigma>' where s'def: "semcomm c1 \<sigma> = Norm \<sigma>' \<and> (\<forall>w. w \<notin> FA c1 \<longrightarrow> \<sigma>' w = \<sigma> w)" by auto
+    moreover with s have "semcomm (Cond b c0 c1) \<sigma> = Norm \<sigma>'" by simp
+    ultimately show ?case by auto
+  qed
 next
-  case (Newvar v e c)
-  then show ?case sorry
+  case (Newvar v e c0)
+  from Newvar have "semcomm c0 (\<lambda>x. if x=v then (semint e \<sigma>) else \<sigma> x) \<noteq> Bottom" by auto
+  with Newvar have "let \<sigma>' = (\<lambda>x. if x=v then (semint e \<sigma>) else \<sigma> x) in
+    \<exists>\<sigma>0. semcomm c0 \<sigma>' = Norm \<sigma>0 \<and> (\<forall>w. w \<notin> FA c0 \<longrightarrow> \<sigma>0 w = \<sigma>' w)" by simp
+  then obtain \<sigma>0 where "let \<sigma>' = (\<lambda>x. if x=v then (semint e \<sigma>) else \<sigma> x) in
+    semcomm c0 \<sigma>' = Norm \<sigma>0 \<and> (\<forall>w. w \<notin> FA c0 \<longrightarrow> \<sigma>0 w = \<sigma>' w)" by auto
+  hence "let \<sigma>' = (\<lambda>x. if x=v then (semint e \<sigma>) else \<sigma> x) in
+    semcomm (Newvar v e c0) \<sigma> = Norm (\<lambda>x. if x=v then \<sigma> v else \<sigma>0 x) \<and>
+    (\<forall>w. w \<notin> FA (Newvar v e c0) \<longrightarrow> (\<lambda>x. if x=v then \<sigma> v else \<sigma>0 x) w = \<sigma> w)" by simp
+  then show ?case by simp  
 qed
 
 
@@ -570,42 +605,43 @@ next
       with Assign.prems show "\<sigma>' (\<delta> w) = \<sigma> w" by blast
     qed
   qed
-  have 1: "let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> v) in semcomm (Assign v e) \<sigma> = Norm \<sigma>1" by simp
-  have 2: "let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' (\<delta> v)) in 
+  have 1: "let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> x) in semcomm (Assign v e) \<sigma> = Norm \<sigma>1" by simp
+  have 2: "let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' x) in 
     semcomm (subcomm (Assign v e) \<delta>) \<sigma>' = Norm \<sigma>2" by simp
-  have 3: "\<forall>w. w \<in> FVcomm (Assign v e) \<longrightarrow> (let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> v) in
-       let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' (\<delta> v)) in \<sigma>1 w = \<sigma>2 (\<delta> w))" proof
+  have 3: "\<forall>w. w \<in> FVcomm (Assign v e) \<longrightarrow> (let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> x) in
+       let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' x) in \<sigma>1 w = \<sigma>2 (\<delta> w))" proof
     fix w
-    show "w \<in> FVcomm (Assign v e) \<longrightarrow> (let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> v) in
-       let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' (\<delta> v)) in \<sigma>1 w = \<sigma>2 (\<delta> w))" proof
+    show "w \<in> FVcomm (Assign v e) \<longrightarrow> (let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> x) in
+       let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' x) in \<sigma>1 w = \<sigma>2 (\<delta> w))" proof
       assume winfv: "w \<in> FVcomm (Assign v e)"
       hence "w = v \<or> w \<noteq> v" by simp
-      hence "let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> v) in
-         let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' (\<delta> v)) in
-         \<sigma>1 w = \<sigma>2 (\<delta> w)" proof
+      hence "let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> x) in
+         let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' x) in
+         \<sigma>1 w = \<sigma>2 (\<delta> w)"
+      proof
         assume s: "w = v"
-        hence "let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> v) in \<sigma>1 w = (semint e \<sigma>)" by simp
-        moreover have "let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' (\<delta> v)) in
+        hence "let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> x) in \<sigma>1 w = (semint e \<sigma>)" by simp
+        moreover have "let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' x) in
            \<sigma>2 (\<delta> w) = (semint (subint e \<delta>) \<sigma>')" by (simp add :s)
         moreover from int_prem have "semint (subint e \<delta>) \<sigma>' = semint e \<sigma>" by (simp add: SubsInt)
         ultimately show ?thesis by simp
       next
         assume s: "w \<noteq> v"
-        hence sigma1:"let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> v) in \<sigma>1 w = \<sigma> v" by simp
+        hence sigma1:"let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> x) in \<sigma>1 w = \<sigma> w" by simp
         from winfv have "{w, v} \<subseteq> FVcomm (Assign v e)" by simp
         with s have "{w, v} \<subseteq> FVcomm (Assign v e) \<and> w \<noteq> v" by simp
         with Assign.prems(1) have wnotv: "\<delta> w \<noteq> \<delta> v" by (simp add:s)
-        hence sigma2: "let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' (\<delta> v)) in
-           \<sigma>2 (\<delta> w) = \<sigma>' (\<delta> v)" by (simp add: s)
-        from Assign.prems have "\<sigma> v = \<sigma>' (\<delta> v)" by simp
+        hence sigma2: "let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' x) in
+           \<sigma>2 (\<delta> w) = \<sigma>' (\<delta> w)" by simp
+        from Assign.prems winfv have "\<sigma>' (\<delta> w) = \<sigma> w" by auto
         with sigma1 sigma2 show ?thesis by simp
       qed
-      thus "(let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> v) in
-         let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' (\<delta> v)) in \<sigma>1 w = \<sigma>2 (\<delta> w))" by simp
+      thus "(let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> x) in
+         let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' x) in \<sigma>1 w = \<sigma>2 (\<delta> w))" by simp
     qed
   qed
-  hence "\<exists> \<sigma>1 \<sigma>2. let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> v) in
-         let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' (\<delta> v)) in
+  hence "\<exists> \<sigma>1 \<sigma>2. let \<sigma>1 = (\<lambda>x. if x = v then (semint e \<sigma>) else \<sigma> x) in
+         let \<sigma>2 = (\<lambda>x. if x = \<delta> v then (semint (subint e \<delta>) \<sigma>') else \<sigma>' x) in
          semcomm (Assign v e) \<sigma> = Norm \<sigma>1 \<and> semcomm (subcomm (Assign v e) \<delta>) \<sigma>' = Norm \<sigma>2 \<and>
          (\<forall>w. w \<in> FVcomm (Assign v e) \<longrightarrow> \<sigma>1 w = \<sigma>2 (\<delta> w))" by simp
   thus ?case by simp
@@ -623,15 +659,15 @@ next
     ultimately show ?case by simp
   next
     assume semnotB: "semcomm c0 \<sigma> \<noteq> Bottom"
-    with  \<Sigma>b.exhaust have  "(\<exists>\<sigma>0. semcomm c0 \<sigma> = Norm \<sigma>0)" by (meson \<Sigma>b.exhaust)
-    then obtain \<sigma>0 where defS0: "semcomm c0 \<sigma> = Norm \<sigma>0" by blast
+    with coincidence2 have coincidence: "\<exists>\<sigma>0. semcomm c0 \<sigma> = Norm \<sigma>0 \<and> (\<forall>w. w \<notin> FA c0 \<longrightarrow> \<sigma>0 w = \<sigma> w)" by simp
+    then obtain \<sigma>0 where defS0: "semcomm c0 \<sigma> = Norm \<sigma>0" by auto
     from Seq have "(semcomm c0 \<sigma> = Bottom \<and> semcomm (subcomm c0 \<delta>) \<sigma>' = Bottom) \<or>
        (\<exists> \<sigma>1 \<sigma>2. semcomm c0 \<sigma> = Norm \<sigma>1 \<and> semcomm (subcomm c0 \<delta>) \<sigma>' = Norm \<sigma>2
        \<and> (\<forall>w. w \<in> FVcomm c0 \<longrightarrow> \<sigma>1 w = \<sigma>2 (\<delta> w)))" by simp
     with semnotB have "\<exists> \<sigma>1 \<sigma>2. semcomm c0 \<sigma> = Norm \<sigma>1 \<and> semcomm (subcomm c0 \<delta>) \<sigma>' = Norm \<sigma>2
        \<and> (\<forall>w. w \<in> FVcomm c0 \<longrightarrow> \<sigma>1 w = \<sigma>2 (\<delta> w))" by simp
-    hence "\<exists>\<sigma>2. semcomm (subcomm c0 \<delta>) \<sigma>' = Norm \<sigma>2" by blast
-    then obtain \<sigma>0' where defS0': "semcomm (subcomm c0 \<delta>) \<sigma>' = Norm \<sigma>0'" by blast
+    hence "\<exists>\<sigma>2. semcomm (subcomm c0 \<delta>) \<sigma>' = Norm \<sigma>2" by auto
+    then obtain \<sigma>0' where defS0': "semcomm (subcomm c0 \<delta>) \<sigma>' = Norm \<sigma>0'" by auto
     have prem2: "\<forall>w. w \<in> FVcomm c1 \<longrightarrow> \<sigma>0'(\<delta> w) = \<sigma>0 w" proof
       fix w
       show "w \<in> FVcomm c1 \<longrightarrow> \<sigma>0'(\<delta> w) = \<sigma>0 w" proof
@@ -664,10 +700,11 @@ next
             with winFV 2 have "{w, u} \<subseteq> FVcomm (Seq c0 c1) \<and> u \<noteq> w \<and> \<delta> w = \<delta> u" by simp
             with p show "False" by blast
           qed
-          from coincidence2 defS0 wnotFA have 1: "\<sigma>0 w = \<sigma> w" by blast
+          from coincidence wnotFA defS0 have 1: "\<sigma>0 w = \<sigma> w" by auto
           with Seq.prems winFV1 have 2: "... = \<sigma>' (\<delta> w)" by simp
-          from coincidence2 have "\<exists>\<sigma>0'. semcomm (subcomm c0 \<delta>) \<sigma>' = Norm \<sigma>0' \<Longrightarrow>
-            \<forall>w. w \<notin> FA (subcomm c0 \<delta>) \<longrightarrow> \<sigma>0' w = \<sigma>' w" by simp
+          from coincidence2 have "semcomm (subcomm c0 \<delta>) \<sigma>' \<noteq> Bottom
+            \<Longrightarrow> \<exists>\<sigma>0'. semcomm (subcomm c0 \<delta>) \<sigma>' = Norm \<sigma>0' \<and>
+            (\<forall>w. w \<notin> FA (subcomm c0 \<delta>) \<longrightarrow> \<sigma>0' w = \<sigma>' w)" by simp
           with defS0' have "\<forall>w. w \<notin> FA (subcomm c0 \<delta>) \<longrightarrow> \<sigma>0' w = \<sigma>' w" by simp
           with dwnotFA have "\<sigma>0' (\<delta> w) = \<sigma>' (\<delta> w)" by simp
           with 1 2 have "\<sigma>0 w = \<sigma>0' (\<delta> w)" by simp
@@ -687,6 +724,7 @@ next
       thus ?thesis by simp
     next
       assume s: "semcomm c1 \<sigma>0 \<noteq> Bottom"
+      with coincidence2 have coincidence: "\<exists>\<sigma>1'. semcomm c1 \<sigma>0 = Norm \<sigma>1' \<and> (\<forall>w. w \<notin> FA c1 \<longrightarrow> \<sigma>1' w = \<sigma>0 w)" by simp
       from Seq.prems have "(\<forall>w w'. {w, w'} \<subseteq> FVcomm c1 \<and> w \<noteq> w' \<longrightarrow> \<delta> w \<noteq> \<delta> w')" by simp
       with prem2 Seq have "(semcomm c1 \<sigma>0 = Bottom \<and> semcomm (subcomm c1 \<delta>) \<sigma>0' = Bottom) \<or>
              (\<exists> \<sigma>1 \<sigma>2. semcomm c1 \<sigma>0 = Norm \<sigma>1 \<and> semcomm (subcomm c1 \<delta>) \<sigma>0' = Norm \<sigma>2
@@ -724,15 +762,16 @@ next
               with winFV 2 have "{w, u} \<subseteq> FVcomm (Seq c0 c1) \<and> u \<noteq> w \<and> \<delta> w = \<delta> u" by simp
               with p show "False" by blast
             qed
-            from coincidence2 wnotFA1 defS1 have 1: "\<sigma>1 w = \<sigma>0 w" by blast
+            from coincidence wnotFA1 defS1 have 1: "\<sigma>1 w = \<sigma>0 w" by simp
             from Seq have "((semcomm c0 \<sigma> = Bottom \<and> semcomm (subcomm c0 \<delta>) \<sigma>' = Bottom) \<or>
              (\<exists> \<sigma>1 \<sigma>2. semcomm c0 \<sigma> = Norm \<sigma>1 \<and> semcomm (subcomm c0 \<delta>) \<sigma>' = Norm \<sigma>2
              \<and> (\<forall>w. w \<in> FVcomm c0 \<longrightarrow> \<sigma>1 w = \<sigma>2 (\<delta> w))))" by simp
             with semnotB have "\<exists> \<sigma>1 \<sigma>2. semcomm c0 \<sigma> = Norm \<sigma>1 \<and> semcomm (subcomm c0 \<delta>) \<sigma>' = Norm \<sigma>2
              \<and> (\<forall>w. w \<in> FVcomm c0 \<longrightarrow> \<sigma>1 w = \<sigma>2 (\<delta> w))" by simp
             with defS0 defS0' winFV0 have 2: "\<sigma>0 w = \<sigma>0' (\<delta> w)" by simp
-            from coincidence2 have "\<exists>\<sigma>1'. semcomm (subcomm c1 \<delta>) \<sigma>0' = Norm \<sigma>1' \<Longrightarrow>
-              \<forall>w. w \<notin> FA (subcomm c1 \<delta>) \<longrightarrow> \<sigma>1' w = \<sigma>0' w" by simp
+            from coincidence2 have "semcomm (subcomm c1 \<delta>) \<sigma>0' \<noteq> Bottom
+              \<Longrightarrow> \<exists>\<sigma>1'. semcomm (subcomm c1 \<delta>) \<sigma>0' = Norm \<sigma>1' \<and>
+              (\<forall>w. w \<notin> FA (subcomm c1 \<delta>) \<longrightarrow> \<sigma>1' w = \<sigma>0' w)" by simp
             with defS1' have "\<forall>w. w \<notin> FA (subcomm c1 \<delta>) \<longrightarrow> \<sigma>1' w = \<sigma>0' w" by simp
             with dwnotFA have "\<sigma>0' (\<delta> w) = \<sigma>1' (\<delta> w)" by simp
             with 1 2 have "\<sigma>1 w = \<sigma>1' (\<delta> w)" by simp
